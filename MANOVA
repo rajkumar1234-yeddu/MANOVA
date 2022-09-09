@@ -1,0 +1,124 @@
+import numpy as np
+
+k = int(input("Enter no.of treatments : "))
+# 3
+# p = int(input("Enter no.of observations in each subgroup : "))
+p = 2
+T = []
+n = []
+alp = .05
+for i in range(k):
+    n.append(int(input("Enter no.of sub groups in treatment :")))
+    t = []
+    for j in range(n[i]):
+        a = list(map(int, input("Enter rowwise: ").split()))
+        a = np.matrix(a).reshape(p,1)
+        t.append(a)
+    T.append(t)
+print()
+for i in range(k):
+    print()
+    print("Treatment ",i+1)
+    print(T[i])
+    
+yi_ = []
+y__ = 0
+for i in range(k):
+    yi_.append(sum(T[i])/n[i])
+    y__ += sum(T[i])
+
+y__ = y__/sum(n)
+print("yi_=",yi_)
+print("y__=",y__)
+
+#for y1
+ssey1 = 0
+ssty1 = 0
+for i in range(k):
+    for j in range(n[i]):
+        ssey1 = ssey1 + (float(T[i][j][0])-float(yi_[i][0]))**2
+        ssty1 = ssty1 + (float(T[i][j][0])-float(y__[0]))**2
+    
+ssry1 = ssty1-ssey1
+print(ssey1)
+print(ssty1)
+print(ssry1)
+
+#for y2
+ssey2 = 0
+ssty2 = 0
+for i in range(k):
+    for j in range(n[i]):
+        ssey2 = ssey2 + (float(T[i][j][1])-float(yi_[i][1]))**2
+        ssty2 = ssty2 + (float(T[i][j][1])-float(y__[1]))**2
+    
+ssry2 = ssty2-ssey2
+print(ssey2)
+print(ssty2)
+print(ssry2)
+
+# For y1 and y2
+ssey12 = 0
+ssty12 = 0
+for i in range(k):
+    for j in range(n[i]):
+        ssey12 = ssey12 + float((T[i][j][0]*T[i][j][1]) - (yi_[i][0]*yi_[i][1]))
+        ssty12 = ssty12 + float((T[i][j][0]*T[i][j][1]) - (y__[0]*y__[1]))
+    
+ssry12 = ssty12-ssey12
+print(ssey12)
+print(ssty12)
+print(ssry12)
+
+B = np.matrix([[ssry1, ssry12],[ssry12, ssry2]])
+W = np.matrix([[ssey1, ssey12],[ssey12, ssey2]])
+T = np.matrix([[ssty1, ssty12],[ssty12, ssty2]])
+print("B=",B)
+print("W=",W)
+print("T=",T)
+
+def determinent(matrix):
+    no_rows=len(matrix)
+    for row in matrix:
+        if len(row)!=no_rows:
+            print("not a square matrix")
+            return None
+    if len(matrix)==2:
+        simple_det=(matrix[0][0]*matrix[1][1])-(matrix[1][0]*matrix[0][1])
+        return simple_det
+    else:
+        #cofactor expression
+        answer=0
+        no_columns=no_rows
+        for j in range(no_columns):
+            cofactor=((-1) ** (0+j) * matrix[0][j]) * (determinent(smallermatrix(matrix,0,j)))
+            answer+=cofactor
+        return answer
+        
+ det_w = determinent(np.array(W))
+det_t = determinent(np.array(T))
+LAMBDA = float(det_w/det_t)
+print("LAMBDA*=",LAMBDA)
+
+import scipy.stats as s
+
+F = ((sum(n)-k-1)/(k-1))*((1-(LAMBDA)**.5)/(LAMBDA**.5))
+alp = .05
+cou = 0
+if F<1:
+    cou=1
+    F=1/F
+print("F cal=",F)
+if cou==1:
+    Ft=s.f.ppf(1-alp,p*(sum(n)-k-1),p*(k-1))
+else:
+    Ft=s.f.ppf(1-alp,p*(k-1),p*(sum(n)-k-1))
+print("F t.v=",Ft)
+if F>Ft:
+    print("We reject Ho")
+    print("There is no homoginity among the table")
+    print("We reject the model")
+else:
+    print("We accept Ho")
+    print("There is homoginity among the table")
+    print("We accept the model")
